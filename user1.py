@@ -1,8 +1,9 @@
-
 import socket
 import argparse
 
-CS_IP = socket.gethostbyname("tejo")
+CS_IP = socket.gethostbyname("tejo.ist.utl.pt")
+#IP EXTERNAL NETWORK 193.136.138.142
+#IP INTERNAL NETWORK 192.168.1.2
 CS_PORT = 58011
 BUFFER_SIZE = 256
 MESSAGE = "user connected?"
@@ -16,16 +17,22 @@ print "PORT:", CS_PORT
 #s.close()
 
 #print "response:", response
+while 1:
+	login = raw_input()
+	print login
+	print login.split(' ')
+	
 
 
 def login(user, passe):
-	#if (user.isdigit() ):#&& add way to parse 'passe' ):
+	#if (user.isdigit() ):#&& add way to parse 'passe' ): check split()
 		#TO_DO
 		s.connect((CS_IP, CS_PORT))
-		s.send('AUT ' + user +' '+ passe)
+		s.send('AUT ' + user +' '+ passe +'\n')
 		response = s.recv(BUFFER_SIZE)
 		print "response:", response
 login('99999','zzzzzzzz')
+
 #def deluser():
 	#TO_DO
 	#add way to check if login was done
