@@ -1,5 +1,7 @@
 import socket
 import sys
+import os
+import time
 
 CS_IP = socket.gethostbyname("tejo.ist.utl.pt")
 #IP EXTERNAL NETWORK 193.136.138.142
@@ -76,7 +78,83 @@ def dirlist():
 	s.shutdown(socket.SHUT_RDWR)
 	s.close()
 	loginflag = 0
+	
 
+def backup(direc):
+	#s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	#s.connect((CS_IP, CS_PORT))
+	fileslist = os.listdir(direc)
+	n = 0
+	msg = ''
+	final = "BCK " + direc
+	for file in fileslist:
+		msg += ' ' + file
+		msg += ' ' + time.strftime('%d.%m.%Y %H:%M:%S', time.gmtime(os.path.getmtime(direc+"/"+file)))
+		msg += ' ' + str(os.path.getsize(direc+"/"+file))
+		n += 1
+	final += ' ' + str(n) + msg + '\n'
+	print final
+	#sends directory name and file details to CS
+	s.send(final.encode())
+	response = s.recv(BUFFER_SIZE)
+	#recives response from CS
+	print response
+	s.close()
+	loginflag = 0
+	count = 0
+	filecount = 0
+	c = ""
+	content = ""
+	for c in response:
+		while c!="\n" :
+			while c==" ":
+				count += 1
+				if (count == 1):
+					BS_IP = content
+				elif (count == 2):
+					BS_PORT = content
+				elif (count == 3):
+					n = content
+					b = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+					b.connect((BS_IP, BS_PORT))
+					b.send('AUT ' + uzer +' '+ passe +'\n'.encode())
+					aurState = b.recv(BUFFER_SIZE).decode()
+					print aurState
+					b.send('UPL '+ direc + ' ' + n + ' ')
+				elif (count > 3):
+					if(filecount%4 == 0):
+						filename = content
+					elif(filecount%4 == 1):
+						filedate = content
+					elif(filecount%4 == 2):
+						filetime = content
+					elif(filecount%4 == 3):
+						filezise = content
+						b.send(filename+' '+filedate+' '+filetime+' '+filezise.encode())
+						f = open (direc+"/"+filename, "rb")
+						l = f.read(1024)
+						while (l):
+							b.send(l.encode())
+							l = f.read(1024)
+					if(filecount == 3):
+						filecount = 0
+    				elif(filecount == 0 or filecount == 1 or filecount == 2):
+    					filecount += 1
+    			print content
+    			content = ''
+			content += c
+	b.send('\n'.encode())
+	response = b.recv(BUFFER_SIZE).decode()
+	print response
+	b.close()
+
+	#arranjar maneira de dividir o que receber BS_IP BS_PORT
+	#b = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	#b.connect(BS_IP, BS_PORT)
+	#b.send(STUFF)
+	#response = b.recv(BUFFER_SIZE)
+	#print "response:", response
+	#b.close()
 
 def filelist(dirc):
 	global s
@@ -90,6 +168,7 @@ def filelist(dirc):
 	while c!="\n" :
 		c = s.recv(1).decode()
 		content+=c
+
 	print content
 	s.shutdown(socket.SHUT_RDWR)
 	s.close()
@@ -136,8 +215,9 @@ while True:
 		#---------------EXIT-----------------#
 		if(processed_input[0]== 'exit'):
 			exit()
-			
+
 	if num_of_spaces == 1:
+		#-------------FILELIST---------------#
 		if(processed_input[0]== 'filelist'):
 			print processed_input[1]
 			if(aurState == 'AUR OK\n'):
@@ -145,6 +225,15 @@ while True:
 			if(aurState == 'AUR NEW\n'):
 				login(user,password)
 				filelist(processed_input[1])
+
+		#---------------BACKUP---------------#
+		if(processed_input[0]== 'backup'):
+			if(aurState == 'AUR OK\n'):
+				backup(processed_input[1])
+			if(aurState == 'AUR NEW\n'):
+				login(user,password)
+				backup(processed_input[1])
+
 	if num_of_spaces == 2:
 		#---------------LOGIN---------------#
 		if(processed_input[0]== 'login'):
@@ -163,28 +252,8 @@ while True:
 						password = processed_input[2]
 					input_flag = 1
 
-#deluser() #nao funciona no CS do tejo
-
-
-def backup(direc):
-	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-	s.connect((CS_IP, CS_PORT))
-	s.send(direc) #how to send the list of files in direc
-	response = s.recv(BUFFER_SIZE)
-	print "response:", response
-	s.close()
-	#arranjar maneira de dividir o que receber BS_IP BS_PORT
-	b = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-	b.connect(BS_IP, BS_PORT)
-	#b.send(STUFF)
-	response = b.recv(BUFFER_SIZE)
-	print "response:", response
-	b.close()
 
 #def restore(dir):
-	#TO_DO
-
-#def filelist(dir):
 	#TO_DO
 
 #def delete(dir):
