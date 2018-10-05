@@ -13,9 +13,13 @@ digits = ['0','1','2','3','4','5','6','7','8','9']
 passCode = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
 input_flag = 1
 
+s = None
+
 user = None
 passeword = None
 aurState = ''
+
+loginflag = 0
 
 print "IP:", CS_IP
 print "PORT:", CS_PORT
@@ -25,63 +29,96 @@ print "PORT:", CS_PORT
 #s.close()
 
 def login(user, passe):
-	#if (user.isdigit() ):#&& add way to parse 'passe' ): check split()
-		#TO_DO
+	#TO_DO?
+	global s
 	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	s.connect((CS_IP, CS_PORT))
-	s.send('AUT ' + user +' '+ passe +'\n')
+	s.send('AUT ' + user +' '+ passe +'\n'.encode())
 	global aurState
-	aurState = s.recv(BUFFER_SIZE)
+	aurState = s.recv(BUFFER_SIZE).decode()
 	print aurState
-	s.shutdown(socket.SHUT_RDWR)
-	s.close()
+	global loginflag
+	loginflag = 1
 
 def deluser():
-	#TO_DO
-	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-	s.connect((CS_IP, CS_PORT))
-	s.send('DLU\n')
-	response = s.recv(BUFFER_SIZE)
+	#TO_DO?
+	global s
+	if (loginflag == 0):
+		login(user, passeword)
+	s.send('DLU\n'.encode())
+	response = s.recv(BUFFER_SIZE).decode()
 	print "response:", response
 	s.shutdown(socket.SHUT_RDWR)
 	s.close()
+	global loginflag
+	loginflag = 0
 	#add way to check if login was done
 	#add way to check if there is no information (this should be done in the CS, the user just waits)
 	#wait for CS to confirm
 
 def dirlist():
-	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-	s.connect((CS_IP, CS_PORT))
-	s.send('LSD') #how to send the list of files in direc
-	response = s.recv(BUFFER_SIZE)
-	response2 = s.recv(BUFFER_SIZE)
-	print response
-	print response2
-	#ver o que se passa com o wireshark
+	global s
+	global loginflag
+	if (loginflag == 0):
+		login(user, passeword)
+	s.send('LSD\n'.encode()) #how to send the list of files in direc
+	c = ""
+	content = ""
+	while c!="\n" :
+		c = s.recv(1).decode()
+		content+=c
+	print content
+	s.shutdown(socket.SHUT_RDWR)
+	s.close()
+	loginflag = 0
+
+
+def filelist(dirc):
+	global s
+	global loginflag
+	if (loginflag == 0):
+		print (user, passeword)
+		login(user, passeword)
+	s.send("LSF "+ dirc +"\n".encode())
+	c = ""
+	content = ""
+	while c!="\n" :
+		c = s.recv(1).decode()
+		content+=c
+	print content
+	s.shutdown(socket.SHUT_RDWR)
+	s.close()
+	loginflag = 0
 
 #######################################
 #----------------MAIN-----------------#
 #######################################
 print '***************\nCommands:\n  login *user* *password*\n  dirlist\n***************\n'
 while True:	
-	inpt = raw_input("pls input")
+	inpt = raw_input("~")
 	inpt.split(" ")
 	num_of_spaces = inpt.count(' ')
 	processed_input = inpt.split(' ')
 	if num_of_spaces == 0:
+		#---------------DIRLIST--------------#
 		if(processed_input[0]== 'dirlist'):
-			print 'entrou'
-			print aurState
 			if(aurState == 'AUR OK\n'):
-				
 				dirlist()
 			if(aurState == 'AUR NEW\n'):
 				login(user,passeword)
 				dirlist()
 			#if(aurState == 'ERR')
+
 	if num_of_spaces == 1:
-		pass #TO_DO
+		if(processed_input[0]== 'filelist'):
+			print processed_input[1]
+			if(aurState == 'AUR OK\n'):
+				filelist(processed_input[1])
+			if(aurState == 'AUR NEW\n'):
+				login(user,passeword)
+				filelist(processed_input[1])
 	if num_of_spaces == 2:
+		#---------------LOGIN---------------#
 		if(processed_input[0]== 'login'):
 			if (len(processed_input[1]) == 5 and len(processed_input[2]) == 8):
 				for i in processed_input[1]:
@@ -97,6 +134,7 @@ while True:
 					passeword = processed_input[2]
 					login(user, passeword)
 					input_flag = 1
+
 #deluser() #nao funciona no CS do tejo
 
 
