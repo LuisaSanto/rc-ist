@@ -1,6 +1,33 @@
 import socket
 import sys
 import argparse
+import multiprocessing as Process
+
+def servingCS(socketUDP, portUDP):
+    print("Awaiting contact from CS")
+    try:
+        socketUDP.settimeout(300.0)
+        message, address = socketUDP.recvfrom(1024)
+    except Exception:
+        print("5 minutes have passed. Waiting 5 more minutes.")
+        return
+    reply = message.split(' ')
+    print("Message received from {]".format(address[0], str(address[1])))
+    print("Content: {}".format(message))
+
+    if reply[:3] == "LSF":
+        print("LSF")
+
+    elif reply[:3] == "LSU":
+        print("LSU")
+
+    elif reply[:3] == "DLB":
+        print("DLB")
+
+    else:
+        print("Message received with wrong format")
+        return
+
 
 try:
     isRegisted = 0
@@ -68,6 +95,8 @@ try:
             sys.exit()
 
         print("Registation completed with success")
+
+        servingCS(serverUDP, portBS)
 
     except:
         print("Backup Server not responding. Try again.")
