@@ -3,6 +3,8 @@ import sys
 import argparse
 
 try:
+    isRegisted = 0
+
     # parse input
     parser = argparse.ArgumentParser()
 
@@ -18,7 +20,7 @@ try:
         sys.exit(0)
 
     # Default values
-    hostCS = socket.gethostbyname()
+    hostCS = socket.gethostname()
     portCS = 59001
     portBS = 59000
 
@@ -27,15 +29,17 @@ try:
     if arguments.n: hostCS = arguments.n
     if arguments.p: portCS = arguments.p
 
-    #####################################################
-    # create a udp socket to establish CS connection
-    #####################################################
+
+    ##########################################################################################################
+    ##########################################################################################################
+    ######################## create a udp socket to establish CS connection ##################################
+    ##########################################################################################################
+    ##########################################################################################################
 
     serverUDP = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     serverUDP.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
     try:
-        # TODO: settimeout
         # BS registation on CS
         message = "REG " + socket.gethostbyname(socket.gethostname()) + \
                   " " + str(portBS) + "\n"
@@ -64,15 +68,21 @@ try:
             sys.exit()
 
         print("Registation completed with success")
-        isRegisted = 1
 
     except:
         print("Backup Server not responding. Try again.")
         sys.exit("Shutting down Backup Server.")
 
-    #####################################################
-    # create a tcp socket to establish user connection
-    #####################################################
+    isRegisted = 1
+
+    # TODO: KEEP HERE
+
+
+    ##########################################################################################################
+    ##########################################################################################################
+    ######################## create a tcp socket to establish user connection ################################
+    ##########################################################################################################
+    ##########################################################################################################
 
     serverTCP = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     serverTCP.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -80,6 +90,8 @@ try:
     serverTCP.listen(5)
     # TODO: TCP functions
 
+
+# Exceptions treatment
 except KeyboardInterrupt:
     print('\n KeyboardInterrupt found')
 
@@ -87,7 +99,7 @@ except socket.error:
     print("Socket error found. Aborting!")
 
 finally:
-    # TODO: VER DISTO
+    # BS unregistation on CS
     if (isRegisted == 1):
         message = "UNR " + socket.gethostbyname(socket.gethostname()) + \
                   str(portBS)
