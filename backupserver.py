@@ -28,13 +28,53 @@ try:
     if arguments.p: portCS = arguments.p
 
     #####################################################
+    # create a udp socket to establish CS connection
+    #####################################################
+
+    serverUDP = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    serverUDP.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
+    try:
+        #TODO: settimeout
+        #BS registation on CS
+        message = "REG " + socket.gethostbyname(socket.gethostname()) + \
+                  " " + str(portBS) + "\n"
+        print("Sending registation message to CS on host and port: {}".format(
+            (socket.gethostbyname(hostCS), portBS)
+        ))
+        try:
+            serverUDP.sendto(message, (socket.gethostbyname(hostCS), portBS))
+        except socket.error as err:
+            print("Error sending message to Central Server: {}".format(err))
+            sys.exit("Shutting down Backup Server")
+
+        print("Waiting for BS confirmation")
+        confirmation = serverUDP.recvfrom(1024)
+
+        if(confirmation[0] == "REG NOK\n"):
+            print("Registation not possible. Closing server")
+            serverUDP.close()
+            sys.exit()
+
+        print("Registation completed with success")
+        serverRegisted = 1
+
+    except:
+        print("Backup Server not responding. Try again.")
+        sys.exit("Shutting down Backup Server.")
+
+
+
+
+
+    #####################################################
     # create a tcp socket to establish user connection
     #####################################################
 
-    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    server.bind((hostCS, portBS))
-    server.listen(5)
+    serverTCP = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    serverTCP.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    serverTCP.bind((hostCS, portBS))
+    serverTCP.listen(5)
     # TODO: TCP functions
 
 except KeyboardInterrupt:
