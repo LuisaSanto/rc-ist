@@ -35,8 +35,8 @@ try:
     serverUDP.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
     try:
-        #TODO: settimeout
-        #BS registation on CS
+        # TODO: settimeout
+        # BS registation on CS
         message = "REG " + socket.gethostbyname(socket.gethostname()) + \
                   " " + str(portBS) + "\n"
         print("Sending registation message to CS on host and port: {}".format(
@@ -45,27 +45,30 @@ try:
         try:
             serverUDP.sendto(message, (socket.gethostbyname(hostCS), portBS))
         except socket.error as err:
+            print("RGR ERR")
             print("Error sending message to Central Server: {}".format(err))
             sys.exit("Shutting down Backup Server")
 
-        print("Waiting for BS confirmation")
-        confirmation = serverUDP.recvfrom(1024)
+        print("Waiting for CS confirmation")
+        try:
+            serverUDP.settimeout(100)
+            confirmation = serverUDP.recvfrom(1024)
+        except:
+            print("Timeout exceeded!")
+            print("Confirmation not possible. Closing server")
+            sys.exit("Shutting down Backup Server.")
 
-        if(confirmation[0] == "REG NOK\n"):
+        if (confirmation[0] == "REG NOK\n"):
             print("Registation not possible. Closing server")
             serverUDP.close()
             sys.exit()
 
         print("Registation completed with success")
-        serverRegisted = 1
+        isRegisted = 1
 
     except:
         print("Backup Server not responding. Try again.")
         sys.exit("Shutting down Backup Server.")
-
-
-
-
 
     #####################################################
     # create a tcp socket to establish user connection
@@ -85,4 +88,32 @@ except socket.error:
 
 finally:
     # TODO: VER DISTO
+    if (isRegisted == 1):
+        message = "UNR " + socket.gethostbyname(socket.gethostname()) + \
+                  str(portBS)
+        print("Sending termination connection to: {}".format(
+            (socket.gethostbyname(hostCS), portBS)
+        ))
+        try:
+            serverUDP.sendto(message, (socket.gethostbyname(hostCS), portBS))
+        except socket.error as err:
+            print("BKR ERR")
+            print("Error sending message to Central Server: {}".format(err))
+            sys.exit("Shutting down Backup Server")
+        print("Waiting for CS confirmation")
+
+        try:
+            serverUDP.settimeout(10)
+            confirmation = serverUDP.recvfrom(1024)
+        except:
+            print("Timeout exceeded!")
+            print("Registation not possible. Closing server")
+            sys.exit("Shutting down Backup Server.")
+        if (confirmation[0] == "UAR NOK"):
+            print("Registation not possible. Closing server")
+            serverUDP.close()
+            sys.exit()
+        print("Unregistation completed with success")
+        serverUDP.close()
+    print("Shutting down Backup Server")
     sys.exit(0)
