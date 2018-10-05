@@ -1,5 +1,5 @@
 import socket
-import argparse
+import sys
 
 CS_IP = socket.gethostbyname("tejo.ist.utl.pt")
 #IP EXTERNAL NETWORK 193.136.138.142
@@ -16,10 +16,10 @@ input_flag = 1
 s = None
 
 user = None
-passeword = None
+password = None
 aurState = ''
 
-loginflag = 0
+loginflag = 0 #if == 0: no login done, aka no TCP connection open
 
 print "IP:", CS_IP
 print "PORT:", CS_PORT
@@ -28,23 +28,28 @@ print "PORT:", CS_PORT
 #response = s.recv(BUFFER_SIZE)
 #s.close()
 
-def login(user, passe):
+def login(uzer, passe):
 	#TO_DO?
 	global s
-	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-	s.connect((CS_IP, CS_PORT))
-	s.send('AUT ' + user +' '+ passe +'\n'.encode())
-	global aurState
-	aurState = s.recv(BUFFER_SIZE).decode()
-	print aurState
 	global loginflag
-	loginflag = 1
+	global aurState
+	if(loginflag==0 and ((user == None and password == None) or (user == uzer and password == passe))):
+		s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		s.connect((CS_IP, CS_PORT))
+		s.send('AUT ' + uzer +' '+ passe +'\n'.encode())
+		aurState = s.recv(BUFFER_SIZE).decode()
+		print aurState
+		loginflag = 1
+		return 1
+	else:
+		print "login already done OR current user must logout before a new one log's in"
+		return 0
 
 def deluser():
 	#TO_DO?
 	global s
 	if (loginflag == 0):
-		login(user, passeword)
+		login(user, password)
 	s.send('DLU\n'.encode())
 	response = s.recv(BUFFER_SIZE).decode()
 	print "response:", response
@@ -60,7 +65,7 @@ def dirlist():
 	global s
 	global loginflag
 	if (loginflag == 0):
-		login(user, passeword)
+		login(user, password)
 	s.send('LSD\n'.encode()) #how to send the list of files in direc
 	c = ""
 	content = ""
@@ -77,8 +82,8 @@ def filelist(dirc):
 	global s
 	global loginflag
 	if (loginflag == 0):
-		print (user, passeword)
-		login(user, passeword)
+		print (user, password)
+		login(user, password)
 	s.send("LSF "+ dirc +"\n".encode())
 	c = ""
 	content = ""
@@ -90,6 +95,23 @@ def filelist(dirc):
 	s.close()
 	loginflag = 0
 
+def logout():
+	global user
+	global password
+	global loginflag
+	if (loginflag == 1):
+		loginflag = 0
+		print user + " logged out"
+	else:
+		print "no login was done OR TCP connection already closed"
+	user = None
+	password = None
+
+def exit():
+	global loginflag
+	if(loginflag == 1):
+		logout()
+	sys.exit()
 #######################################
 #----------------MAIN-----------------#
 #######################################
@@ -105,17 +127,23 @@ while True:
 			if(aurState == 'AUR OK\n'):
 				dirlist()
 			if(aurState == 'AUR NEW\n'):
-				login(user,passeword)
+				login(user,password)
 				dirlist()
 			#if(aurState == 'ERR')
-
+		#--------------LOGOUT----------------#
+		if(processed_input[0]== 'logout'):
+			logout()
+		#---------------EXIT-----------------#
+		if(processed_input[0]== 'exit'):
+			exit()
+			
 	if num_of_spaces == 1:
 		if(processed_input[0]== 'filelist'):
 			print processed_input[1]
 			if(aurState == 'AUR OK\n'):
 				filelist(processed_input[1])
 			if(aurState == 'AUR NEW\n'):
-				login(user,passeword)
+				login(user,password)
 				filelist(processed_input[1])
 	if num_of_spaces == 2:
 		#---------------LOGIN---------------#
@@ -130,9 +158,9 @@ while True:
 						input_flag = 0
 						break
 				if(input_flag == 1):
-					user = processed_input[1]
-					passeword = processed_input[2]
-					login(user, passeword)
+					if (login(processed_input[1], processed_input[2])):
+						user = processed_input[1]
+						password = processed_input[2]
 					input_flag = 1
 
 #deluser() #nao funciona no CS do tejo
@@ -161,6 +189,3 @@ def backup(direc):
 
 #def delete(dir):
 	#TO_DO
-
-#def logout():
-#TO_DO
