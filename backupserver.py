@@ -27,19 +27,21 @@ try:
     if arguments.n: hostCS = arguments.n
     if arguments.p: portCS = arguments.p
 
-
     #####################################################
-    #create a tcp socket to establish user connection
+    # create a tcp socket to establish user connection
     #####################################################
 
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     server.bind((hostCS, portBS))
     server.listen(5)
-    #TODO: TCP functions
+    # TODO: TCP functions
 
 except KeyboardInterrupt:
     print('\n KeyboardInterrupt found')
+
+except socket.error:
+    print("Socket error found. Aborting!")
 
 finally:
     # TODO: VER DISTO
