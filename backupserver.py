@@ -8,17 +8,18 @@ import shutil
 
 
 def update_users():
-        users_file = open("users.txt", "r")
-        user_lines = users_file.readlines()
-        users = []
-        pw = []
-        for i in range(len(user_lines)):
-            pair = user_lines[i].split(" ")
-            users += [pair[0]]
-            pw += [pair[1].rstrip()]
-        return dict(zip(users, pw))
+    users_file = open("users.txt", "r")
+    user_lines = users_file.readlines()
+    users = []
+    pw = []
+    for i in range(len(user_lines)):
+        pair = user_lines[i].split(" ")
+        users += [pair[0]]
+        pw += [pair[1].rstrip()]
+    return dict(zip(users, pw))
 
-def servingCS(socketUDP, portUDP):
+
+def servingCS(socketUDP):
     print("Awaiting contact from CS")
     try:
         socketUDP.settimeout(300.0)
@@ -63,7 +64,7 @@ def servingCS(socketUDP, portUDP):
         else:
             print("User not found.")
             serverUDP.sendto("LFD ERR\n")
-            
+
     elif message[:3] == "LSU":
         if len(reply) != 3:
             print("ERR! Message sent from server is corrupted")
@@ -86,7 +87,6 @@ def servingCS(socketUDP, portUDP):
             print("Error sending message to Central Server: {}".format(err))
             serverUDP.sendto("LUR ERR\n")
             return
-
 
     elif message[:3] == "DLB":
         if len(reply) != 3:
@@ -127,6 +127,7 @@ def servingCS(socketUDP, portUDP):
             return
 
         print("Removal completed")
+        update_users()
         try:
             serverUDP.sendto("DLB OK\n")
         except socket.error as err:
@@ -138,6 +139,10 @@ def servingCS(socketUDP, portUDP):
     else:
         print("Message received with wrong format")
         return
+
+
+def servingUser(serverTCP, portBS):
+    print("")
 
 
 try:
@@ -166,7 +171,6 @@ try:
     if arguments.b: portBS = arguments.b
     if arguments.n: hostCS = arguments.n
     if arguments.p: portCS = arguments.p
-
 
     ##########################################################################################################
     ##########################################################################################################
@@ -200,7 +204,7 @@ try:
             print("Confirmation not possible. Closing server")
             sys.exit("Shutting down Backup Server.")
 
-        if (confirmation[0] == "REG NOK\n"):
+        if confirmation[0] == "REG NOK\n":
             print("Registation not possible. Closing server")
             serverUDP.close()
             sys.exit()
@@ -214,10 +218,7 @@ try:
 
     isRegisted = 1
 
-    servingCS(serverUDP, portBS)
-
-    # TODO: KEEP HERE
-
+    servingCS(serverUDP, portBS)  # TODO: multiprocessing this function
 
     ##########################################################################################################
     ##########################################################################################################
@@ -229,7 +230,12 @@ try:
     serverTCP.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     serverTCP.bind((hostCS, portBS))
     serverTCP.listen(5)
-    # TODO: TCP functions
+
+    while 1:
+        print("Waiting for a user to contact")
+        socketAccept, address = serverTCP.accept()
+        servingUser(serverTCP, portBS)  # TODO: multiprocessing this function maybe
+        socketAccept.close()
 
 
 # Exceptions treatment
