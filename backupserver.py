@@ -4,10 +4,21 @@ import argparse
 import os as os
 from os import listdir
 from os.path import isfile, join
-import time
-from datetime import datetime
+import shutil
 
-def servingCS(socketUDP, portUDP, users):
+
+def update_users():
+        users_file = open("users.txt", "r")
+        user_lines = users_file.readlines()
+        users = []
+        pw = []
+        for i in range(len(user_lines)):
+            pair = user_lines[i].split(" ")
+            users += [pair[0]]
+            pw += [pair[1].rstrip()]
+        return dict(zip(users, pw))
+
+def servingCS(socketUDP, portUDP):
     print("Awaiting contact from CS")
     try:
         socketUDP.settimeout(300.0)
@@ -24,12 +35,13 @@ def servingCS(socketUDP, portUDP, users):
             print("ERR! Message sent from server is corrupted")
             try:
                 serverUDP.sendto("LFD ERR\n")
-                return
             except socket.error as err:
                 print("Error sending message to client")
+                return
         user_name = reply[1]
         user_dir = reply[2]
         print("Getting user's name directory")
+        users_dict = update_users()
         if users_dict.get(user_name):
             path = user_name + "/" + user_dir
             onlyfiles = [f for f in listdir(path) if isfile(join(path, f))]
@@ -44,26 +56,84 @@ def servingCS(socketUDP, portUDP, users):
                 merge_list = list(zip(onlyfiles, time, size))
                 serverUDP.sendto("LFD" + len(onlyfiles) + merge_list)
             except socket.error as err:
+                print("LFD ERR\n")
                 print("Error sending message to Central Server: {}".format(err))
+                serverUDP.sendto("LFD ERR\n")
                 return
+        else:
+            print("User not found.")
+            serverUDP.sendto("LFD ERR\n")
             
     elif message[:3] == "LSU":
         if len(reply) != 3:
             print("ERR! Message sent from server is corrupted")
             try:
                 serverUDP.sendto("LUR ERR\n")
-                return
             except socket.error as err:
                 print("Error sending message to client")
+                return
+        user_name = reply[1]
+        user_pw = reply[2]
+        user = user_name + " " + user_pw
+        print("Adding new user to user's list")
+        users_file = open("users.txt", "a")
+        users_file.write(user)
+        users_file.close()
+        try:
+            serverUDP.sendto("LUR OK\n")
+        except socket.error as err:
+            print("LUR ERR\n")
+            print("Error sending message to Central Server: {}".format(err))
+            serverUDP.sendto("LUR ERR\n")
+            return
+
 
     elif message[:3] == "DLB":
         if len(reply) != 3:
             print("ERR! Message sent from server is corrupted")
             try:
                 serverUDP.sendto("DBR ERR\n")
-                return
             except socket.error as err:
                 print("Error sending message to client")
+                return
+        user_name = reply[1]
+        user_dir = reply[2]
+        user = user_name + " " + user_dir
+
+        print("Removing user's directory")
+        try:
+            shutil.rmtree(user)
+        except Exception as err:
+            print("Error in removing user directory")
+            socketUDP.sendto("DBR NOK\n")
+            return
+
+        print("Removing user in user's list")
+        try:
+            users_file = open("users.txt", "r")
+            lines = users_file.readlines()
+            users_file.close()
+            for i in range(len(lines)):
+                if user_name in lines[i]:
+                    del lines[i]
+                    break
+            users_file = open("users.txt", "w")
+            for line in lines:
+                users_file.write(line)
+            users_file.close()
+        except IOError as err:
+            print("Error trying to remove user from BS")
+            serverUDP.sendto("DBR ERR\n")
+            return
+
+        print("Removal completed")
+        try:
+            serverUDP.sendto("DLB OK\n")
+        except socket.error as err:
+            print("DBR ERR\n")
+            print("Error sending message to Central Server: {}".format(err))
+            serverUDP.sendto("DBR ERR\n")
+            return
 
     else:
         print("Message received with wrong format")
@@ -144,17 +214,7 @@ try:
 
     isRegisted = 1
 
-    users_file = open("users.txt", "r")
-    user_lines = users_file.readlines()
-    users = []
-    pw = []
-    for i in range(len(user_lines)):
-        pair = user_lines[i].split(" ")
-        users += [pair[0]]
-        pw += [pair[1].rstrip()]
-    users_dict = dict(zip(users, pw))
-    servingCS(serverUDP, portBS, users_dict)
-
+    servingCS(serverUDP, portBS)
 
     # TODO: KEEP HERE
 
