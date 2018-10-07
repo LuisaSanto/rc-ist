@@ -7,6 +7,30 @@ from os.path import isfile, join
 import shutil
 
 
+def send_file(socketAccept, user_name, user_dir, user_n):
+    path = user_name + "/" + user_dir
+    onlyfiles = [f for f in listdir(path) if isfile(join(path, f))]
+    time = []
+    size = []
+    for file in onlyfiles:
+        files_path = path + "/" + file
+        size += [os.path.getsize(files_path)]
+        time += [time.ctime(os.path.getmtime(files_path))]  # TODO: DATE FORMAT
+    print("Sending files to user")
+    try:
+        for i in range(user_n):
+            file_to_user = open(onlyfiles[i], "rb")
+            data = file_to_user.read(256)
+            while(data):
+                socketAccept.send(data)
+                details = size[i] + time[i]
+                socketAccept.send(details)
+    except socket.error as err:
+        print("UPR ERR\n")
+        print("Error sending message to Central Server: {}".format(err))
+        socketAccept.send("UPR ERR\n")
+        return
+
 def update_users():
     users_file = open("users.txt", "r")
     user_lines = users_file.readlines()
@@ -121,6 +145,7 @@ def servingCS(socketUDP):
             for line in lines:
                 users_file.write(line)
             users_file.close()
+            update_users()
         except IOError as err:
             print("Error trying to remove user from BS")
             serverUDP.sendto("DBR ERR\n")
@@ -141,8 +166,106 @@ def servingCS(socketUDP):
         return
 
 
-def servingUser(serverTCP, portBS):
-    print("")
+def servingUser(socketAccept, portBS, address):
+    user_name = ""
+    print("Connection received from  {}".format(address))
+    try:
+        message = socketAccept.recv(1024) #read the frist 3 bytes
+    except:
+        print("Error receiving message")
+        return
+    reply = message.split(' ')
+    if message == "":
+        print("Empty message")
+
+    elif message[:3] == "AUT":
+        if len(reply) != 3:
+            print("ERR! Message sent from server is corrupted")
+            try:
+                socketAccept.send("AUT ERR\n")
+            except socket.error as err:
+                print("Error sending message to client")
+                return
+        user_name = reply[1]
+        user_pw = reply[2]
+        user = user_name + " " + user_pw
+        users_dict = update_users()
+        if users_dict.get(user_name):
+            print("User already registered, updating password")
+            try:
+                users_file = open("users.txt", "r")
+                lines = users_file.readlines()
+                users_file.close()
+                for i in range(len(lines)):
+                    if user_name in lines[i]:
+                        del lines[i]
+                        break
+                users_file = open("users.txt", "w")
+                lines.append(user)
+                for line in lines:
+                    users_file.write(line)
+                users_file.close()
+                update_users()
+            except IOError as err:
+                print("Error trying to remove user from BS")
+                socketAccept.send("AUR ERR\n")
+                return
+        else:
+            print("Registering new user")
+            try:
+                users_file = open("users.txt", "r")
+                lines = users_file.readlines()
+                users_file.close()
+                users_file = open("users.txt", "w")
+                lines.append(user)
+                for line in lines:
+                    users_file.write(line)
+                users_file.close()
+                update_users()
+            except IOError as err:
+                print("Error trying to remove user from BS")
+                socketAccept.send("AUR ERR\n")
+                return
+        try:
+            socketAccept.send("AUR OK\n")
+        except socket.error as err:
+            print("AUR ERR\n")
+            print("Error sending message to Central Server: {}".format(err))
+            socketAccept.send("AUR ERR\n")
+            return
+
+    elif message[:3] == "UPL":
+        if len(reply) != 3:
+            print("ERR! Message sent from server is corrupted")
+            try:
+                socketAccept.send("UPR ERR\n")
+            except socket.error as err:
+                print("Error sending message to client")
+                return
+        user_dir = reply[1]
+        user_n = reply[2]
+        send_file(socketAccept, user_name, user_dir, user_n)
+        try:
+            socketAccept.send("UPR OK\n")
+        except socket.error as err:
+            print("UPR ERR\n")
+            print("Error sending message to Central Server: {}".format(err))
+            socketAccept.send("UPR ERR\n")
+            return
+    elif message[:3] == "RSB":
+        print()
+        try:
+            socketAccept.sendto("RBR OK\n")
+        except socket.error as err:
+            print("RBR ERR\n")
+            print("Error sending message to Central Server: {}".format(err))
+            socketAccept.send("RBR ERR\n")
+            return
+    else:
+        print("Message received with wrong format")
+        return
+
+
 
 
 try:
@@ -234,7 +357,7 @@ try:
     while 1:
         print("Waiting for a user to contact")
         socketAccept, address = serverTCP.accept()
-        servingUser(serverTCP, portBS)  # TODO: multiprocessing this function maybe
+        servingUser(socketAccept, portBS, address)  # TODO: multiprocessing this function maybe
         socketAccept.close()
 
 
