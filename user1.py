@@ -115,11 +115,14 @@ def backup(direc):
 					BS_PORT = content
 				elif (count == 3):
 					n = content
+					#connects to BS
 					b = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 					b.connect((BS_IP, BS_PORT))
+					#AUT w/ BS
 					b.send('AUT ' + uzer +' '+ passe +'\n'.encode())
 					aurState = b.recv(BUFFER_SIZE).decode()
 					print aurState
+					#send UPL starting info
 					b.send('UPL '+ direc + ' ' + n + ' ')
 				elif (count > 3):
 					if(filecount%4 == 0):
@@ -130,7 +133,9 @@ def backup(direc):
 						filetime = content
 					elif(filecount%4 == 3):
 						filezise = content
+						#send filename date_time
 						b.send(filename+' '+filedate+' '+filetime+' '+filezise.encode())
+						#send data of file
 						f = open (direc+"/"+filename, "rb")
 						l = f.read(1024)
 						while (l):
@@ -147,14 +152,6 @@ def backup(direc):
 	response = b.recv(BUFFER_SIZE).decode()
 	print response
 	b.close()
-
-	#arranjar maneira de dividir o que receber BS_IP BS_PORT
-	#b = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-	#b.connect(BS_IP, BS_PORT)
-	#b.send(STUFF)
-	#response = b.recv(BUFFER_SIZE)
-	#print "response:", response
-	#b.close()
 
 def filelist(dirc):
 	global s
@@ -173,6 +170,46 @@ def filelist(dirc):
 	s.shutdown(socket.SHUT_RDWR)
 	s.close()
 	loginflag = 0
+
+def delete(dirc):
+	global s
+	global loginflag
+	if (loginflag == 0):
+		print (user, password)
+		login(user, password)
+	s.send("DEL "+ dirc +"\n".encode())
+	response = s.recv().decode()
+	print response
+
+
+def restore(dirc):
+	global s
+	global BS_IP
+	global BS_PORT
+	global loginflag
+	if (loginflag == 0):
+		print (user, password)
+		login(user, password)
+	s.send("RST "+ dirc +"\n".encode())
+	response = s.recv().decode()
+	print response
+	r1 = response.split(" ")
+	if(r1[0] == 'RSR'):
+		BS_IP = r1[1]
+		BS_PORT = r1[2]
+		b = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		b.connect((BS_IP, BS_PORT))
+		b.send('RSB '+ direc + '\n'.encode())
+		response = b.recv()
+		r2 = response.split(' ')
+		if(r2[0] == 'RBR'):
+			n = r2[1]
+			for i in range(0,n):
+				filename = r2[i+2]
+				filedate = r2[i+3]
+				filetime = r2[i+4]
+				filedata = r2[i+5]
+				#deve ser igual à forma de receber
 
 def logout():
 	global user
@@ -253,8 +290,5 @@ while True:
 					input_flag = 1
 
 
-#def restore(dir):
-	#TO_DO
+	
 
-#def delete(dir):
-	#TO_DO
