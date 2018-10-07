@@ -7,6 +7,51 @@ from os.path import isfile, join
 import shutil
 
 
+#TODO: check open file codes + python manaher
+
+def receive_file(socketAccept, user_name, user_dir):
+    file_size = ""
+    create_dir_name = os.path.dirname("/" + user_name)
+    if not os.path.exists(create_dir_name):
+        os.makedirs(create_dir_name)
+
+    try:
+        byte = socketAccept.recv(1)
+        while byte != "":
+            file_size += byte
+            byte = socketAccept.recv(1)
+        print("File size is {}".format(file_size))
+        file_size = eval(file_size)
+        try:
+            os.remove("/" + user_name + "/" + user_dir)
+            print("Files overwritten")
+        except:
+            print("File created")
+        file_received = open("/" + user_name + "/" + user_dir, "wb+")
+        try:
+            while file_size > 0:
+                socketAccept.settimeout(10)
+                data = socketAccept.recv(256)
+                file_size -= len(data)
+                if file_size <= 0 and data[-1] == "\n":
+                    data = data[:-1]
+                elif file_size <= 0 and data[-1] != "\n":
+                    print("File size is too small. Exit")
+                file_received.write(data)
+        except:
+            print("RBR ERR\n")
+            print("Error receiving message from Central Server")
+            socketAccept.send("RBR ERR\n")
+            return
+        file_received.close()
+    except:
+        print("RBR ERR\n")
+        print("Error receiving file from Central Server")
+        socketAccept.send("RBR ERR\n")
+
+
+
+
 def send_file(socketAccept, user_name, user_dir, user_n):
     path = user_name + "/" + user_dir
     onlyfiles = [f for f in listdir(path) if isfile(join(path, f))]
@@ -253,7 +298,15 @@ def servingUser(socketAccept, portBS, address):
             socketAccept.send("UPR ERR\n")
             return
     elif message[:3] == "RSB":
-        print()
+        if len(reply) != 2:
+            print("ERR! Message sent from server is corrupted")
+            try:
+                socketAccept.send("UPR ERR\n")
+            except socket.error as err:
+                print("Error sending message to client")
+                return
+        user_dir = reply[1]
+        receive_file(socketAccept, user_name, user_dir)
         try:
             socketAccept.sendto("RBR OK\n")
         except socket.error as err:
