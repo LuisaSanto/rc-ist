@@ -417,9 +417,8 @@ try:
     serverTCP.bind((hostCS, portBS))
     serverTCP.listen(5)
 
-    while 1:
     # process_user = Process(target=servingUser, args=(serverTCP,))  # TODO: multiprocessing this function maybe
-        servingUser(serverTCP)
+    servingUser(serverTCP)
     # process_user.daemon = True
     # process_user.start()
 
