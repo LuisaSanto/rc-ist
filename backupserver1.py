@@ -382,7 +382,7 @@ try:
             serverUDP.settimeout(10)
             #serverUDP.bind((hostCS, portCS))
             confirmation = serverUDP.recvfrom(1024)
-            print(confirmation)
+            print(confirmation.decode())
         except:
             print("Timeout exceeded!")
             print("Confirmation not possible. Closing server")

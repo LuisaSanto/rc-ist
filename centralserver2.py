@@ -107,7 +107,7 @@ def UDPconnection(SERVER_SOCKET):
 	print 'request: ', data.decode()
 	answerBS = dealWithBS(data.decode())
 	print answerBS
-	serverUDP.sendto(answerBS, SERVER_SOCKET)
+	serverUDP.sendto(answerBS.encode(), SERVER_SOCKET)
 	print "yo"
 	serverUDP.close()
 
@@ -126,9 +126,10 @@ process_user = Process(target=TCPconnection, args=(serverTCP,))
 process_user.daemon = True
 process_user.start()
 
-#####       UDP connection       ######
-serverUDP = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-serverUDP.bind(SERVER_SOCKET)
-UDPconnection(SERVER_SOCKET)
-# process_backup = Process(target=UDPconnection, args=(SERVER_SOCKET,))
-# process_backup.start()
+while 1:
+	#####       UDP connection       ######
+	serverUDP = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+	serverUDP.bind(SERVER_SOCKET)
+	UDPconnection(SERVER_SOCKET)
+	# process_backup = Process(target=UDPconnection, args=(SERVER_SOCKET,))
+	# process_backup.start()
