@@ -102,7 +102,7 @@ def TCPconnection(serverTCP):
 		connection.close()
 
 def UDPconnection(SERVER_SOCKET):
-	print 'ola'
+	print SERVER_SOCKET
 	data, addrUDP = serverUDP.recvfrom(BUFFER_SIZE)
 	print 'connection asdress: ' + addrUDP
 	print 'request: ', data
@@ -127,8 +127,7 @@ process_user.start()
 
 #####       UDP connection       ######
 serverUDP = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-print "yooo"
 serverUDP.bind(SERVER_SOCKET)
-print "yess"
-UDPconnection(SERVER_SOCKET)
-print "yeaaaass"
+#UDPconnection(SERVER_SOCKET)
+process_backup = Process(target=UDPconnection, args=(SERVER_SOCKET,))
+process_backup.start()

@@ -326,8 +326,6 @@ def servingUser(serverTCP):
             socketAccept.close()
 
 
-
-
 try:
     isRegisted = 0
 
@@ -370,12 +368,10 @@ try:
             message = "REG " + socket.gethostbyname(socket.gethostname()) + \
                       " " + str(portBS) + "\n"
             print("Sending registation message to CS on host and port: {}".format(
-                (socket.gethostbyname(hostCS), portBS)
+                (socket.gethostbyname(hostCS), portCS)
             ))
             print (socket.gethostbyname(hostCS))
-            print(portBS)
-
-            serverUDP.sendto(message, (socket.gethostbyname(hostCS), portBS))
+            serverUDP.sendto(message, (socket.gethostbyname(hostCS), portCS))
             print("aaa")
         except socket.error as err:
             print("RGR ERR")
@@ -408,7 +404,7 @@ try:
 
     synchronizer = Barrier(2)
     serializer = Lock()
-    process_cs = Process(target = servingCS, args=(serverUDP, portBS))  # TODO: multiprocessing this function
+    process_cs = Process(target = servingCS, args=(serverUDP, portCS))  # TODO: multiprocessing this function
     process_cs.daemon = True #run process_cs as daemon so it termates with the main process
     process_cs.start()
     ##########################################################################################################
