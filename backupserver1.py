@@ -371,8 +371,7 @@ try:
                 (socket.gethostbyname(hostCS), portCS)
             ))
             print (socket.gethostbyname(hostCS))
-            serverUDP.sendto(message, (socket.gethostbyname(hostCS), portCS))
-            print("aaa")
+            serverUDP.sendto(message.encode(), (socket.gethostbyname(hostCS), portCS))
         except socket.error as err:
             print("RGR ERR")
             print("Error sending message to Central Server: {}".format(err))
@@ -380,9 +379,10 @@ try:
 
         print("Waiting for CS confirmation")
         try:
-            serverUDP.settimeout(100)
-            serverUDP.bind((hostCS, portCS))
+            serverUDP.settimeout(10)
+            #serverUDP.bind((hostCS, portCS))
             confirmation = serverUDP.recvfrom(1024)
+            print(confirmation)
         except:
             print("Timeout exceeded!")
             print("Confirmation not possible. Closing server")

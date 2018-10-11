@@ -92,7 +92,6 @@ def dealWithBS(data):
 
 def TCPconnection(serverTCP):
 	while  True:
-		print 'ola TCP'
 		connection, addrTCP = serverTCP.accept()  # Assign here, if it didn't raise error.
 		print 'connection address: ', addrTCP
 		request = connection.recv(BUFFER_SIZE)
@@ -104,11 +103,13 @@ def TCPconnection(serverTCP):
 def UDPconnection(SERVER_SOCKET):
 	print SERVER_SOCKET
 	data, addrUDP = serverUDP.recvfrom(BUFFER_SIZE)
-	print 'connection asdress: ' + addrUDP
-	print 'request: ', data
-	answerBS = dealWithBS(data)
+	print 'connection address: ' + str(addrUDP)
+	print 'request: ', data.decode()
+	answerBS = dealWithBS(data.decode())
+	print answerBS
 	serverUDP.sendto(answerBS, SERVER_SOCKET)
-	#connection.close()     ???
+	print "yo"
+	serverUDP.close()
 
 
 ###### MAIN #######
@@ -128,6 +129,6 @@ process_user.start()
 #####       UDP connection       ######
 serverUDP = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 serverUDP.bind(SERVER_SOCKET)
-#UDPconnection(SERVER_SOCKET)
-process_backup = Process(target=UDPconnection, args=(SERVER_SOCKET,))
-process_backup.start()
+UDPconnection(SERVER_SOCKET)
+# process_backup = Process(target=UDPconnection, args=(SERVER_SOCKET,))
+# process_backup.start()
