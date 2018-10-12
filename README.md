@@ -1,6 +1,6 @@
 # Redes de Computadores
 
-## Este projeto foi desenvolvido por:
+## Este projeto foi desenvolvido em python por:
 
 	Grupo 1:
 	- Ana Santo, nº 79758
@@ -27,7 +27,6 @@ Para correr o BS:
 ```
 python3 backupserver.py -b BSport -n CSname -p CSport
 ```
-TODO: IF YOU WANT TO EXPLAIN DELETE HERE
 
 ### 	User App:
 
