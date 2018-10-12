@@ -5,12 +5,18 @@ import time
 
 reload(sys)  
 sys.setdefaultencoding('utf8')
+#print sys.argv
 
 
-CS_IP = socket.gethostbyname("tejo.ist.utl.pt")
+#CS_IP = socket.gethostbyname("tejo.ist.utl.pt")
+for i in range(len(sys.argv)):
+	if sys.argv[i] == '-n':
+		CS_IP = socket.gethostbyname(sys.argv[i+1])
+	elif sys.argv[i] == '-p':
+		CS_PORT = int(sys.argv[i+1])
 #IP EXTERNAL NETWORK 193.136.138.142
 #IP INTERNAL NETWORK 192.168.1.2
-CS_PORT = 58011
+#CS_PORT = 58011
 BS_IP = None
 BS_PORT = None
 BUFFER_SIZE = 1024
