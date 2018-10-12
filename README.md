@@ -16,9 +16,9 @@ Para correr cada um dos programas não é necessário compilar, apenas correr ca
 ### 	Central server:
 
 Para correr o CS :
+
 ```
 python centralserver.py -p CSport
-
 ```
 TODO: IF YOU WANT TO EXPLAIN DELETE HERE
 
@@ -36,7 +36,6 @@ TODO: IF YOU WANT TO EXPLAIN DELETE HERE
 Para correr a aplicação utilizador:
 
 ```
-
 python userApp.py -n CSname -p CSport
 ```
 TODO: IF YOU WANT TO EXPLAIN DELETE HERE
