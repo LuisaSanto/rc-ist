@@ -16,9 +16,9 @@ Para correr cada um dos programas não é necessário compilar, apenas correr ca
 Para correr o CS :
 
 ```
-python centralserver.py -p CSport
+python centralserver.py
 ```
-TODO: IF YOU WANT TO EXPLAIN DELETE HERE
+The UDP connection with the BS only works for the registation. Comands such as backup, filelist and delete could not be tested due to the lack of connection between both servers.
 
 ###		Backupserver Server:
 
