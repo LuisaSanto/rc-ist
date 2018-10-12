@@ -1,5 +1,3 @@
-# rc-ist
-
 # Redes de Computadores
 
 ## Este projeto foi desenvolvido por:
