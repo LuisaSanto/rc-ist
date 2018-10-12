@@ -35,7 +35,7 @@ python3 backupserver.py -b BSport -n CSname -p CSport
 Para correr a aplicação utilizador:
 
 ```
-python userApp.py -n CSname -p CSport
+python user.py -n CSname -p CSport
 ```
 file user.py:
 	Execute command: in python 2.7, 'python user.py -n CSname -p CSport'.
